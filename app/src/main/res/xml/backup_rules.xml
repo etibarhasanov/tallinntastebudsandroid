@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- The saved list and the two choices are worth carrying to a new phone.
+         The cached content is not: it is a copy of the website, and the app
+         refetches it on the first launch anyway. -->
+    <include domain="sharedpref" path="ttb.xml" />
+    <exclude domain="file" path="content" />
+</full-backup-content>

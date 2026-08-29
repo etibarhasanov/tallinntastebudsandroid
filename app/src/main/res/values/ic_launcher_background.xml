@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Never actually seen: the foreground layer is full-bleed, and covers it. -->
+    <color name="ic_launcher_background">#E8DEC3</color>
+</resources>

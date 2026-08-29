@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The launcher label and the radio notification's channel are the only
+         strings Android itself asks for. Every word the reader reads inside the
+         app comes from the website's ui.json or from AppStrings.kt, so that a
+         language can be added on the site rather than in a release. -->
+    <string name="app_name">Tallinn Tastebuds</string>
+    <string name="radio_channel_name">Radio</string>
+    <string name="radio_channel_description">The stream playing from the map.</string>
+</resources>

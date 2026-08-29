@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme.pink.paper. The reader can pick either style inside the app, but
+         the window behind the first frame has to guess, and the phone's own
+         setting is the best guess there is. -->
+    <style name="Theme.TallinnTasteBuds" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/paper_dark</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

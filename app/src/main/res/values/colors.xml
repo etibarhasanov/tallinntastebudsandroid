@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme.red.paper from Theme.kt. Kept in step by hand: only the window
+         behind Compose reads it, and only for the moment before the first frame. -->
+    <color name="paper">#FFF0EA</color>
+</resources>
