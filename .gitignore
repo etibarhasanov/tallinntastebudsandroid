@@ -3,6 +3,12 @@
 build/
 local.properties
 
+# Signing. The release key is the one thing that must never be in here: lose it
+# and no future build can update an installed app; leak it and anyone can.
+keystore.properties
+*.jks
+*.keystore
+
 # Android Studio / IntelliJ
 .idea/
 *.iml

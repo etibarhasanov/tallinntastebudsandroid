@@ -27,6 +27,33 @@ val tileKey: String = run {
     fromFile ?: System.getenv("TTB_TILE_KEY") ?: ""
 }
 
+/** Release signing, read from `keystore.properties` or the environment.
+ *
+ * Absent is a working state, and has to be: F-Droid builds this app from the
+ * tag and signs the result with its own key, so it never has a keystore and a
+ * missing one must never fail the build. The signed APK on GitHub Releases is
+ * the path that needs these, and CI supplies them from repository secrets.
+ *
+ * Nothing here is ever committed. `keystore.properties` and every `*.jks` are
+ * in .gitignore, and the values below are read, never written. */
+val keystore = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use(::load)
+}
+
+fun signingSetting(property: String, variable: String): String? =
+    (keystore.getProperty(property) ?: System.getenv(variable))?.takeIf { it.isNotBlank() }
+
+val ksPath = signingSetting("storeFile", "TTB_STORE_FILE")
+val ksPassword = signingSetting("storePassword", "TTB_STORE_PASSWORD")
+val ksAlias = signingSetting("keyAlias", "TTB_KEY_ALIAS")
+val ksKeyPassword = signingSetting("keyPassword", "TTB_KEY_PASSWORD")
+
+/** All four, and a file actually on disk. A half-configured keystore is a
+ *  typo, and signing with it would fail late and confusingly. */
+val ksFile = ksPath?.let { rootProject.file(it) }?.takeIf { it.exists() }
+val canSign = ksFile != null && ksPassword != null && ksAlias != null && ksKeyPassword != null
+
 android {
     namespace = "ee.tallinntastebuds"
     compileSdk = 35
@@ -35,16 +62,38 @@ android {
         applicationId = "ee.tallinntastebuds"
         minSdk = 26
         targetSdk = 35
+        // Literal on purpose. F-Droid checks out the tag and reads these two
+        // straight out of this file, so they cannot be computed from the
+        // environment or from git — bump them by hand for each release, and
+        // the release workflow checks the tag agrees with versionName.
         versionCode = 1
         versionName = "1.0"
 
         buildConfigField("String", "TILE_KEY", "\"$tileKey\"")
     }
 
+    signingConfigs {
+        if (canSign) {
+            create("release") {
+                storeFile = ksFile
+                storePassword = ksPassword
+                keyAlias = ksAlias
+                keyPassword = ksKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // The app has no secrets to hide and one screen's worth of code;
-            // shrinking it buys nothing worth the risk of a stripped serializer.
+            // Null when there is no keystore, which leaves an unsigned APK —
+            // the input F-Droid wants, and a clear failure for anyone who meant
+            // to sign and mistyped a secret.
+            signingConfig = if (canSign) signingConfigs.getByName("release") else null
+
+            // The app has no secrets to hide and one screen's worth of code.
+            // Shrinking buys nothing worth the risk of a stripped serializer,
+            // and leaving it off is also what keeps an F-Droid build of this
+            // tag byte-for-byte comparable with the one built here.
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }

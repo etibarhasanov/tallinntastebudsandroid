@@ -1,0 +1,136 @@
+name: release
+
+# Cutting a release is pushing a tag. Everything else happens here.
+#
+#   git tag v1.0 && git push origin v1.0
+#
+# The tag has to agree with versionName in app/build.gradle.kts, which is
+# checked below before anything is built — F-Droid reads that literal out of the
+# tagged tree, so a tag that disagrees with it would build one version and
+# publish it as another.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish the signed APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag agrees with versionName
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          set -euo pipefail
+          declared=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          tagged="${GITHUB_REF_NAME#v}"
+          echo "build.gradle.kts says $declared, the tag says $tagged"
+          if [ "$declared" != "$tagged" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match versionName $declared in app/build.gradle.kts"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate the bundled snapshot
+        run: node Tools/validate-seed.mjs
+
+      - name: Check the store listing is current
+        run: |
+          set -euo pipefail
+          node Tools/build-store-metadata.mjs
+          if ! git diff --quiet -- fastlane; then
+            echo "::error::fastlane/ is out of date — run node Tools/build-store-metadata.mjs and commit"
+            git --no-pager diff --stat -- fastlane
+            exit 1
+          fi
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests
+        run: ./gradlew --no-daemon testReleaseUnitTest
+
+      # An unsigned APK cannot be installed, so a missing secret has to stop the
+      # release rather than quietly publish something nobody can open.
+      - name: Decode the signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.TTB_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_BASE64:-}" ]; then
+            echo "::error::TTB_KEYSTORE_BASE64 is not set — see docs/PUBLISHING.md"
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "keystore is $(stat -c%s "$RUNNER_TEMP/release.jks") bytes"
+
+      - name: Build the signed APK
+        env:
+          TTB_STORE_FILE: ${{ runner.temp }}/release.jks
+          TTB_STORE_PASSWORD: ${{ secrets.TTB_STORE_PASSWORD }}
+          TTB_KEY_ALIAS: ${{ secrets.TTB_KEY_ALIAS }}
+          TTB_KEY_PASSWORD: ${{ secrets.TTB_KEY_PASSWORD }}
+          # Optional. Without it the map draws OpenStreetMap's tiles, which is a
+          # working state — see the README.
+          TTB_TILE_KEY: ${{ secrets.TTB_TILE_KEY }}
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: Confirm it really is signed
+        run: |
+          set -euo pipefail
+          apk=app/build/outputs/apk/release/app-release.apk
+          tools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$tools/apksigner" verify --print-certs "$apk"
+
+      - name: Name it after the version
+        id: package
+        run: |
+          set -euo pipefail
+          version=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          name="tallinntastebuds-$version.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$name"
+          sha256sum "$name" | tee "$name.sha256"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK: ${{ steps.package.outputs.name }}
+          VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          set -euo pipefail
+          {
+            cat fastlane/metadata/android/en-US/changelogs/*.txt | tail -1
+            echo
+            echo "Install it by opening the .apk on the phone — see [docs/RUN-ON-YOUR-PHONE.md](docs/RUN-ON-YOUR-PHONE.md)."
+            echo
+            echo '```'
+            cat "$APK.sha256"
+            echo '```'
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" \
+            --title "Tallinn Tastebuds $VERSION" \
+            --notes-file notes.md \
+            "$APK" "$APK.sha256"
+
+      - name: Upload the APK to the run as well
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.name }}
+          path: ${{ steps.package.outputs.name }}
+          if-no-files-found: error

@@ -16,7 +16,9 @@ Kotlin and Jetpack Compose, Android 8.0 (API 26) and later.
 - [Layout](#layout)
 - [What is different from the iOS app, and why](#what-is-different-from-the-ios-app-and-why)
 - [Permissions](#permissions)
+- [Publishing](#publishing)
 - [Keeping it honest](#keeping-it-honest)
+- [Licence](#licence)
 
 ---
 
@@ -250,6 +252,43 @@ is a set of ids in the app's own preferences.
 
 ---
 
+## Publishing
+
+Two shops, one build, neither of which costs anything:
+
+- **F-Droid**, which builds the app itself from a tag in this repository and
+  signs it with its own key. The app meets the
+  [inclusion policy](https://f-droid.org/en/docs/Inclusion_Policy/) as it
+  stands — every dependency is FOSS, and there is no Play Services, no
+  Firebase, no analytics and no ad SDK. The recipe to submit is
+  [`fdroid/ee.tallinntastebuds.yml`](fdroid/ee.tallinntastebuds.yml).
+- **GitHub Releases**, which is the link you can send someone today. Pushing a
+  `v*` tag builds a signed APK, proves it is signed, and publishes it with its
+  SHA-256.
+
+Both are driven by the same tag:
+
+```bash
+git tag v1.1 && git push origin main --tags
+```
+
+The signing key, the four repository secrets, the release checklist and the
+F-Droid submission are all in [docs/PUBLISHING.md](docs/PUBLISHING.md). Read
+the part about the signing key before you make one — losing it means never
+being able to update an installed app again.
+
+The listing text in `fastlane/metadata/android/` is generated rather than
+written, from the site's own `tagline` and the about screen's own words, in all
+nine languages:
+
+```bash
+node Tools/build-store-metadata.mjs
+```
+
+The app collects nothing, and [PRIVACY.md](PRIVACY.md) says so at length.
+
+---
+
 ## Keeping it honest
 
 [`.github/workflows/android.yml`](.github/workflows/android.yml) runs on every
@@ -264,3 +303,24 @@ push:
 The tests are deliberately pointed at `app/src/main/assets/seed` rather than at
 fixtures of their own. Fixtures would only ever prove the app can read data the
 app made up.
+
+Pushing a `v*` tag runs [`release.yml`](.github/workflows/release.yml), which
+adds two more checks before it will publish anything: that the tag agrees with
+`versionName` in `app/build.gradle.kts`, and that `fastlane/` is what the
+generator would produce. The first stops F-Droid building one version and
+publishing it as another; the second stops the listing drifting away from the
+words the app actually shows.
+
+---
+
+## Licence
+
+The **code** is [MIT](LICENSE). Fork it, build your own, point it at your own
+content.
+
+The **content** is not — the write-ups, the photographs and the mark are
+covered by [LICENSE-CONTENT](LICENSE-CONTENT). You may redistribute them
+verbatim as part of a build of this app, which is what an app store does and
+what F-Droid needs; lifting the reviews out to republish elsewhere needs a
+conversation first. They are one person's opinions about where to eat, written
+by hand and verified by going there. They are not a dataset.

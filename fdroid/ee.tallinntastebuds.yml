@@ -1,0 +1,36 @@
+# The F-Droid packaging recipe for this app.
+#
+# This file is not read from here. It is what gets submitted to F-Droid's own
+# repository, as metadata/ee.tallinntastebuds.yml in a merge request against
+# https://gitlab.com/fdroid/fdroiddata — it lives here so that the recipe is
+# version-controlled beside the thing it builds, and so a change to the build
+# is not a change made only in someone else's repo.
+#
+# See docs/PUBLISHING.md for how to submit it.
+
+Categories:
+  - Navigation
+License: MIT
+AuthorName: Tallinn Tastebuds
+AuthorWebSite: https://tallinntastebuds.ee
+WebSite: https://tallinntastebuds.ee
+SourceCode: https://github.com/etibarhasanov/tallinntastebudsandroid
+IssueTracker: https://github.com/etibarhasanov/tallinntastebudsandroid/issues
+
+RepoType: git
+Repo: https://github.com/etibarhasanov/tallinntastebudsandroid.git
+
+Builds:
+  - versionName: '1.0'
+    versionCode: 1
+    commit: v1.0
+    subdir: app
+    gradle:
+      - yes
+
+# Tags drive releases, and versionName in app/build.gradle.kts is a literal, so
+# F-Droid can read the version straight out of the tagged tree.
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: '1.0'
+CurrentVersionCode: 1

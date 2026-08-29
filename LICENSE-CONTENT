@@ -1,0 +1,43 @@
+The map's content — not the code
+================================
+
+Copyright (c) 2026 Tallinn Tastebuds (@tallinntastebuds). All rights reserved.
+
+This notice covers the editorial content of Tallinn Tastebuds, wherever it
+appears in this repository or in a build made from it:
+
+  - the write-ups, in every language, in `app/src/main/assets/seed/restaurants.json`
+  - the interface wording in `app/src/main/assets/seed/ui.json` and the type
+    labels in `taxonomy.json`
+  - the offer text in `deals.json`
+  - the photographs served from `photos/<id>/` on tallinntastebuds.ee
+  - the watercolour mark, and the launcher icon cut from it
+
+These are one person's opinions about where to eat, written by hand and
+verified by going there. They are not a dataset.
+
+What you may do
+---------------
+
+**Redistribute the app.** You may copy and redistribute this content verbatim
+as an unmodified part of a build of this application — which is exactly what an
+app store does, and what F-Droid needs in order to carry the app. No separate
+permission is required for that.
+
+**Quote it.** Ordinary quotation with attribution and a link, as anyone may
+quote anything.
+
+What you may not do without asking
+----------------------------------
+
+Extract the write-ups, the photographs or the mark and republish them
+elsewhere — as a dataset, a listings site, a training corpus, or a competing
+map — whether or not this app is involved.
+
+Asking
+------
+
+The answer is often yes. Ask at https://www.instagram.com/tallinntastebuds/
+
+The MIT licence in LICENSE covers the software and is unaffected by any of the
+above: you may fork the app, build your own, and point it at your own content.
